@@ -1,0 +1,16 @@
+FM_TEST_BEGIN 2026-09-04T21:59:11Z tests/fm-muse-harness.test.sh family=pure-contract-unit expected_gate_skip=none
+ok - muse is detected through any versioned muse-bin ancestor
+ok - muse detection does not claim unrelated muse-containing commands
+ok - muse launch clears foreign harness markers before ancestry detection
+ok - muse spawn launches with autonomy, privacy control, and a positional brief
+ok - muse maps the shared effort vocabulary and reaches ultra only via explicit max
+ok - muse spawn refuses when no credential can reach the provider
+ok - muse spawn refuses a META_API_KEY that cannot reach the worker
+ok - muse spawn accepts a stored credential without META_API_KEY
+ok - muse resolves relative XDG roots before preflight and launch
+ok - muse is refused as a secondmate harness
+not ok - muse binding did not exclude the pre-existing session: sessions_root=/private/var/folders/qs/xh1ls7f513nbqgvj0ct17nsr0000gn/T/fm-muse-harness.pr4OUx/binding/xdgdata/muse/sessions;workspace_root=/private/var/folders/qs/xh1ls7f513nbqgvj0ct17nsr0000gn/T/fm-muse-harness.pr4OUx/binding/wt;binding_id=69155.29994.1788559199;
+FM_TEST_END 2026-09-04T22:00:01Z tests/fm-muse-harness.test.sh exit=1 duration_ms=49571 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=1 skipped_gate=0 duration_ms=49725
+FM_TEST_SUMMARY_FAMILY family=pure-contract-unit count=1 duration_ms=49571 failed=1
+FM_TEST_SLOWEST rank=1 script=tests/fm-muse-harness.test.sh duration_ms=49571

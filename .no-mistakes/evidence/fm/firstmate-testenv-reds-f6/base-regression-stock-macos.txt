@@ -1,0 +1,57 @@
+FM_TEST_BEGIN 2026-09-04T21:57:32Z tests/fm-composer-lib.test.sh family=pure-contract-unit expected_gate_skip=none
+FM_TEST_BEGIN 2026-09-04T21:57:32Z tests/fm-lint.test.sh family=pure-contract-unit expected_gate_skip=none
+ok - fm_composer_classify_content: a bare shell prompt glyph (>/$/%/#) reads unknown, never empty
+ok - fm_composer_classify_content: stripped unbordered content is unknown except verified agent glyphs
+ok - fm_composer_classify_content: a bare shell prompt carrying a command is not empty
+ok - fm_composer_classify_content: a bare prompt glyph inside a bordered composer box reads empty (claude's own idle composer)
+ok - fm_composer_classify_content: agent prompt glyphs (❯ claude, › codex, ⟩ muse) read empty bordered or bare
+ok - fm_composer_classify_content: an empty composer reads empty
+ok - fm_composer_classify_content: idle matching is limited to proven placeholder positions
+ok - fm_composer_classify_content: idle matching preserves the caller's case mode
+ok - fm_composer_classify_content: real unsubmitted text reads pending (including a popup argument-hint fill)
+ok - matrix: claude's ❯+NBSP row reads empty on every profile in both locales (#1988)
+ok - matrix: codex's dim hint is empty when styling proves it, unknown (never pending) when it cannot
+ok - matrix: muse's ⟩ reads empty everywhere and survives losing the styled-glyph signal
+ok - matrix: cursor's reverse-video placeholder remnant reads empty; real typed text stays pending
+not ok - a half-block rule row must count as a structural edge
+FM_TEST_END 2026-09-04T21:57:34Z tests/fm-composer-lib.test.sh exit=1 duration_ms=1856 gate_skip=false
+ok - fm-lint.sh --help reports the complete executable interface
+ok - fm-lint.sh --list-files reports the complete shell inventory
+ok - fm-lint.sh --fast disables ShellCheck extended analysis
+ok - fm-lint.sh keeps full ShellCheck analysis by default in CI
+ok - fm-lint.sh rejects explicit --fast mode in CI
+ok - SKIP (ShellCheck 0.11.0 not resolved): fast lint-defect regression check
+ok - fm-lint.sh pins an explicit ShellCheck version (0.11.0)
+ok - ShellCheck installer retries a transient download failure
+ok - ShellCheck installer selects the official archive, URL, and checksum per OS/arch
+ok - ShellCheck installer rejects a wrong checksum
+ok - ShellCheck installer falls back to shasum -a 256 when sha256sum is absent
+ok - ShellCheck installer prefers sha256sum when both hashers are present
+ok - ShellCheck installer rejects an unsupported OS or architecture
+ok - missing ShellCheck fails closed
+ok - fm-lint.sh refuses to lint under a non-pinned ShellCheck version
+ok - SKIP (ShellCheck 0.11.0 not resolved): lint-defect regression check
+ok - SKIP (ShellCheck 0.11.0 not resolved): ambient options regression check
+ok - SKIP (ShellCheck 0.11.0 not resolved): clean fixture check
+ok - SKIP (ShellCheck 0.11.0 not resolved): deterministic bounded jobs check
+ok - jobs=1 and jobs=2 stop complete worker trees with and without telemetry
+ok - SKIP (ShellCheck 0.11.0 not resolved): seeded source-boundary parity check
+not ok - changed-mode lint run failed
+fm-lint.sh: ShellCheck 0.11.0 (pinned 0.11.0)
+fm-lint.sh: full ShellCheck extended analysis enabled
+fm-lint-workflows.sh: actionlint not found; install actionlint 1.7.12 with bin/fm-install-actionlint.sh <destination-directory> and put that directory on PATH.
+FM_TEST_END 2026-09-04T21:57:41Z tests/fm-lint.test.sh exit=1 duration_ms=8485 gate_skip=false
+FM_TEST_BEGIN 2026-09-04T21:57:41Z tests/fm-muse-harness.test.sh family=pure-contract-unit expected_gate_skip=none
+FM_TEST_BEGIN 2026-09-04T21:57:41Z tests/fm-lint-workflows.test.sh family=pure-contract-unit expected_gate_skip=none
+not ok - fm-harness.sh under process 'muse-bin-0.1.0-R708.1' reported '', expected muse
+FM_TEST_END 2026-09-04T21:57:41Z tests/fm-muse-harness.test.sh exit=1 duration_ms=117 gate_skip=false
+ok - fm-lint-workflows.sh pins an explicit actionlint version (1.7.12)
+not ok - current workflows must parse, got 1
+fm-lint-workflows.sh: actionlint not found; install actionlint 1.7.12 with bin/fm-install-actionlint.sh <destination-directory> and put that directory on PATH.
+FM_TEST_END 2026-09-04T21:57:41Z tests/fm-lint-workflows.test.sh exit=1 duration_ms=120 gate_skip=false
+FM_TEST_SUMMARY total=4 failed=4 skipped_gate=0 duration_ms=9097
+FM_TEST_SUMMARY_FAMILY family=pure-contract-unit count=4 duration_ms=10578 failed=4
+FM_TEST_SLOWEST rank=1 script=tests/fm-lint.test.sh duration_ms=8485
+FM_TEST_SLOWEST rank=2 script=tests/fm-composer-lib.test.sh duration_ms=1856
+FM_TEST_SLOWEST rank=3 script=tests/fm-lint-workflows.test.sh duration_ms=120
+FM_TEST_SLOWEST rank=4 script=tests/fm-muse-harness.test.sh duration_ms=117
