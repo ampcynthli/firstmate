@@ -1,38 +1,50 @@
 #!/usr/bin/env bash
-# herdr-checklist.sh - render a single markdown checklist file in a dedicated,
-# auto-refreshing Herdr pane, and stand that pane up in one command.
+# herdr-checklist.sh - the Herdr checklist plugin's command entrypoints.
 #
-# Subcommands:
-#   view <file>    Long-running. Watch <file> and re-render it on every change.
-#                  This is what runs inside the dedicated Herdr pane.
-#   setup [opts]   Create the checklist file from the built-in starter (only if
-#                  it does not exist yet), then open a dedicated Herdr pane
-#                  running `view`. Always prints the manual recipe as a fallback.
+# Herdr launches these from herdr-plugin.toml (argv arrays, no shell), with the
+# plugin directory as the working directory and the plugin runtime environment
+# set. Subcommands:
+#   view   Pane entrypoint. Watch the checklist file and re-render it on change.
+#   new    Action. Scaffold a checklist file (format: checklist-template.md) and
+#          print how to open its pane.
 #
-# setup options:
-#   --file <path>      checklist file (default: $HERDR_CHECKLIST_FILE or ./CHECKLIST.md)
-#   --owner <name>     name written into the starter header (default: "you")
-#   --direction <dir>  split direction: right (default) or down
-#   --ratio <float>    split ratio passed through to `herdr pane split`
+# The checklist file is $HERDR_CHECKLIST_FILE if set (use an absolute path),
+# else CHECKLIST.md under $HERDR_PLUGIN_STATE_DIR (Herdr-provided). The starter
+# owner name comes from $HERDR_CHECKLIST_OWNER (default "you").
 #
-# Rendering: if glow, mdcat, or bat is on PATH it is used; otherwise plain cat.
-# Override the choice with $HERDR_CHECKLIST_RENDERER (a program name).
-# No required dependencies beyond bash and coreutils; jq is used only if present.
-# The format the checklist file follows lives in checklist-template.md.
+# Rendering: glow, mdcat, or bat if any is on PATH, otherwise plain cat. Force a
+# choice with $HERDR_CHECKLIST_RENDERER (a program name). No required
+# dependencies beyond bash and coreutils (cksum).
 
-SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 RENDERERS=(glow mdcat bat)
 
 warn() { printf '%s\n' "$*" >&2; }
 die() { warn "$*"; exit 1; }
 
-# Portable mtime read (BSD/macOS stat, then GNU/Linux stat).
-checklist_mtime() {
-  stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null
+# The one place the checklist file path is decided, so the pane and the action
+# always agree on it.
+resolve_file() {
+  if [ -n "${HERDR_CHECKLIST_FILE:-}" ]; then
+    printf '%s\n' "$HERDR_CHECKLIST_FILE"
+    return
+  fi
+  local base=${HERDR_PLUGIN_STATE_DIR:-${HERDR_PLUGIN_CONFIG_DIR:-$PWD}}
+  printf '%s/CHECKLIST.md\n' "$base"
 }
 
-# Echo the renderer program to use: the override if set, else the first
-# candidate found on PATH, else "cat".
+# A content fingerprint, not a timestamp: cksum reads the bytes, so an edit is
+# detected even when it lands in the same second and keeps the same size (which
+# whole-second mtime comparison would miss). "missing" when the file is absent.
+fingerprint() {
+  if [ -f "$1" ]; then
+    cksum < "$1"
+  else
+    printf 'missing'
+  fi
+}
+
+# Echo the renderer program: the override if set, else the first candidate on
+# PATH, else "cat".
 pick_renderer() {
   if [ -n "${HERDR_CHECKLIST_RENDERER:-}" ]; then
     printf '%s\n' "$HERDR_CHECKLIST_RENDERER"
@@ -55,8 +67,8 @@ render() {
   renderer=$(pick_renderer "${RENDERERS[@]}")
   clear_screen
   if [ ! -f "$file" ]; then
-    printf 'No checklist yet at %s\n\nCreate one with:\n  %s setup --file %s\n' \
-      "$file" "$SELF" "$file"
+    printf 'No checklist yet at %s\n\nCreate one with:\n  %s plugin action invoke %s.new\n' \
+      "$file" "${HERDR_BIN_PATH:-herdr}" "${HERDR_PLUGIN_ID:-herdr-checklist}"
     return
   fi
   case $renderer in
@@ -67,15 +79,14 @@ render() {
   esac
 }
 
-# ponytail: 1s mtime poll instead of an inotify/fswatch dependency. A checklist
-# changes a few times an hour, so the poll is invisible; swap in entr/fswatch
-# only if you ever need sub-second latency.
+# ponytail: 1s content-fingerprint poll instead of an inotify/fswatch
+# dependency. A checklist changes a few times an hour, so the poll is invisible;
+# swap in entr/fswatch only if you ever need sub-second latency.
 view() {
-  local file=${1:-} last="" now
-  [ -n "$file" ] || die "usage: $SELF view <file>"
+  local file last="" now
+  file=$(resolve_file)
   while :; do
-    now=$(checklist_mtime "$file" 2>/dev/null || printf 'missing')
-    [ -n "$now" ] || now=missing
+    now=$(fingerprint "$file")
     if [ "$now" != "$last" ]; then
       last=$now
       render "$file"
@@ -102,82 +113,32 @@ starter() {
 EOF
 }
 
-# Read the new pane id out of `herdr pane split` output (jq if present, else sed).
-extract_pane_id() {
-  local out=$1 id=""
-  if command -v jq >/dev/null 2>&1; then
-    id=$(printf '%s' "$out" | jq -r '.result.pane.pane_id // .result.pane_id // empty' 2>/dev/null)
-  fi
-  if [ -z "$id" ]; then
-    id=$(printf '%s' "$out" | sed -n 's/.*"pane_id":"\([^"]*\)".*/\1/p' | head -n1)
-  fi
-  [ -n "$id" ] && printf '%s\n' "$id"
-}
-
-print_recipe() {
-  local file=$1 dir
-  dir=$(cd "$(dirname "$file")" && pwd)
-  cat <<EOF
-
-Manual setup (works in any Herdr session):
-  1. Split a pane where you want the checklist:
-       herdr pane split --current --direction right --cwd "$dir"
-  2. Run the viewer in that new pane (use its pane id):
-       $SELF view "$file"
-Keep that pane open; it refreshes whenever $file changes.
-EOF
-}
-
-open_pane() {
-  local file=$1 direction=$2 ratio=$3 dir out pane_id
-  dir=$(cd "$(dirname "$file")" && pwd)
-  local -a split=(pane split --current --direction "$direction" --cwd "$dir")
-  [ -n "$ratio" ] && split+=(--ratio "$ratio")
-  out=$(herdr "${split[@]}" 2>&1) || { warn "herdr pane split failed: $out"; return 1; }
-  pane_id=$(extract_pane_id "$out")
-  [ -n "$pane_id" ] || { warn "could not read a new pane id from: $out"; return 1; }
-  herdr pane run "$pane_id" "$SELF" view "$file" || { warn "herdr pane run failed"; return 1; }
-  printf 'Opened checklist pane %s viewing %s\n' "$pane_id" "$file"
-}
-
-setup() {
-  local file=${HERDR_CHECKLIST_FILE:-CHECKLIST.md} owner=you direction=right ratio=""
-  while [ $# -gt 0 ]; do
-    case $1 in
-      --file) file=${2:?--file needs a path}; shift 2 ;;
-      --owner) owner=${2:?--owner needs a name}; shift 2 ;;
-      --direction) direction=${2:?--direction needs right|down}; shift 2 ;;
-      --ratio) ratio=${2:?--ratio needs a number}; shift 2 ;;
-      *) die "setup: unknown option $1" ;;
-    esac
-  done
-
+new() {
+  local file owner
+  file=$(resolve_file)
+  owner=${HERDR_CHECKLIST_OWNER:-you}
   if [ -e "$file" ]; then
-    printf 'Using existing checklist %s\n' "$file"
+    printf 'Checklist already exists: %s\n' "$file"
   else
+    mkdir -p "$(dirname "$file")"
     starter "$owner" >"$file"
-    printf 'Created %s\n' "$file"
+    printf 'Created checklist: %s\n' "$file"
   fi
-
-  if [ "${HERDR_ENV:-}" = "1" ] && command -v herdr >/dev/null 2>&1; then
-    open_pane "$file" "$direction" "$ratio" || print_recipe "$file"
-  else
-    warn "Not inside a Herdr pane (HERDR_ENV != 1); showing the manual recipe."
-    print_recipe "$file"
-  fi
+  printf 'Open its pane with:\n  %s plugin pane open --plugin %s --entrypoint checklist\n' \
+    "${HERDR_BIN_PATH:-herdr}" "${HERDR_PLUGIN_ID:-herdr-checklist}"
 }
 
 usage() {
-  sed -n '2,22p' "$SELF" | sed 's/^# \{0,1\}//'
+  sed -n '2,26p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 main() {
   set -euo pipefail
   case ${1:-} in
     view) shift; view "$@" ;;
-    setup) shift; setup "$@" ;;
+    new) shift; new "$@" ;;
     ""|-h|--help|help) usage ;;
-    *) die "unknown subcommand: $1 (try: view, setup, --help)" ;;
+    *) die "unknown subcommand: $1 (try: view, new, --help)" ;;
   esac
 }
 

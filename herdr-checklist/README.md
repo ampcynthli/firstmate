@@ -1,9 +1,9 @@
 # Herdr checklist
 
-A single markdown file, rendered in a dedicated [Herdr](https://herdr.dev) pane, that gives you one at-a-glance view of everything in flight: what only you can unblock, what your agents are running, what is parked, and what just landed.
+A [Herdr](https://herdr.dev) plugin that gives you one at-a-glance view of everything in flight — what only you can unblock, what your agents are running, what is parked, and what just landed — as a single markdown file rendered in a dedicated, auto-refreshing pane.
 
-It is a convention plus a tiny viewer, not a heavy plugin.
-Herdr has no third-party plugin API, so this ships as a standalone script that drives Herdr's pane CLI (`herdr pane split` / `herdr pane run`).
+It is a real Herdr plugin (a `herdr-plugin.toml` manifest plus a small shell entrypoint), so you install it with `herdr plugin` and open its pane with `herdr plugin pane open`.
+The convention it packages — the four sections and the invariants that keep the file trustworthy — is the actual value; the code is tiny.
 
 ## What it looks like
 
@@ -25,33 +25,53 @@ Herdr has no third-party plugin API, so this ships as a standalone script that d
 - Merged the logging fix: https://github.com/acme/app/pull/812
 ```
 
-The four sections, the placement rules, and the invariants that keep the file trustworthy (every thread appears exactly once, nothing is dropped silently, reply-words are load-bearing) are the actual value here.
-They live in [checklist-template.md](checklist-template.md) — read that; it is the contract you (and any agent maintaining the file for you) follow on every edit.
+The four sections, the placement rules, and the invariants (every thread appears exactly once, nothing is dropped silently, reply-words are load-bearing) are defined in [checklist-template.md](checklist-template.md) — read that; it is the contract you (and any agent maintaining the file for you) follow on every edit.
 
 ## Install (under 5 minutes)
 
-1. Copy this directory anywhere on the machine where you run Herdr, and make the script executable:
+Link it as a local plugin (works with no remote):
 
-   ```sh
-   chmod +x herdr-checklist.sh
-   ```
+```sh
+herdr plugin link /path/to/firstmate/herdr-checklist
+```
 
-2. From inside a Herdr pane, create the checklist and open its viewer pane in one command:
+Or install it from the GitHub repo you got it from:
 
-   ```sh
-   ./herdr-checklist.sh setup --owner "Your Name"
-   ```
+```sh
+herdr plugin install <owner>/<repo>/herdr-checklist
+```
 
-   That writes `CHECKLIST.md` (if it does not exist), splits a pane to the right, and starts the auto-refreshing viewer there.
-   Pass `--file path/to/CHECKLIST.md` to put it elsewhere, or `--direction down` / `--ratio 0.3` to change the split.
+Then create a checklist and open its pane:
 
-3. Keep that pane open. It re-renders whenever the file changes — no restart needed.
+```sh
+herdr plugin action invoke herdr-checklist.new     # scaffolds the checklist file
+herdr plugin pane open --plugin herdr-checklist --entrypoint checklist
+```
 
-Not inside Herdr, or want to place the pane by hand? `setup` prints the manual recipe, which is just `herdr pane split` followed by `herdr-checklist.sh view <file>` in the new pane.
+The pane re-renders whenever the file changes — no restart needed.
+To keep it one keystroke away, bind the pane or the action in `config.toml`:
+
+```toml
+[[keys.command]]
+key = "prefix+k"
+type = "plugin_action"
+command = "herdr-checklist.new"
+description = "new checklist"
+```
+
+## Where the file lives
+
+By default the checklist is `CHECKLIST.md` under the plugin's Herdr-managed state directory; `new` prints the exact path it created.
+To keep it somewhere you choose (for example a project's own `CHECKLIST.md`), set an absolute path before opening the pane and running the action:
+
+```sh
+export HERDR_CHECKLIST_FILE=/abs/path/to/CHECKLIST.md
+export HERDR_CHECKLIST_OWNER="Your Name"    # written into the starter header
+```
 
 ## Rendering
 
-The viewer uses [`glow`](https://github.com/charmbracelet/glow), `mdcat`, or `bat` if any is installed, and falls back to plain `cat` otherwise — nothing extra is required.
+The pane uses [`glow`](https://github.com/charmbracelet/glow), `mdcat`, or `bat` if any is installed, and falls back to plain `cat` otherwise — nothing extra is required.
 Force a choice with `HERDR_CHECKLIST_RENDERER=glow`.
 
 ## Keeping it useful
@@ -66,4 +86,4 @@ If an AI agent maintains the file for you, point it at [checklist-template.md](c
 ./herdr-checklist.test.sh
 ```
 
-Covers renderer selection, change detection, and the starter skeleton.
+Covers change detection, file-path resolution, renderer selection, and the starter skeleton.

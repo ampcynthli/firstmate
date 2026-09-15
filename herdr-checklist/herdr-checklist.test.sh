@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Self-check for herdr-checklist.sh: renderer selection, mtime change detection,
-# and the starter skeleton. Run: ./herdr-checklist.test.sh
+# Self-check for herdr-checklist.sh: fingerprint change detection, file-path
+# resolution, renderer selection, and the starter skeleton.
+# Run: ./herdr-checklist.test.sh
 set -uo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,24 +18,24 @@ check() {
   fi
 }
 
-# No candidate on PATH -> cat.
+# Renderer: fall back to cat, honor first-found ordering, honor override.
 check renderer-fallback "$(pick_renderer definitely-not-real-xyz)" cat
-# First existing candidate wins (sh and cat both exist; sh is listed first).
 check renderer-first-found "$(pick_renderer sh cat)" sh
-# Explicit override beats probing.
 check renderer-override "$(HERDR_CHECKLIST_RENDERER=glow pick_renderer nope)" glow
 
-# mtime read reflects a changed file.
+# Fingerprint is content-based: a same-length edit (which whole-second mtime
+# would miss) must change it, and a missing file reads "missing".
 tmp=$(mktemp)
-m1=$(checklist_mtime "$tmp")
-touch -t 203801010000 "$tmp"  # fixed far-future time; robust to sub-second clocks
-m2=$(checklist_mtime "$tmp")
+printf 'AAAA' >"$tmp"; fp1=$(fingerprint "$tmp")
+printf 'BBBB' >"$tmp"; fp2=$(fingerprint "$tmp")  # same length, different bytes
+if [ "$fp1" != "$fp2" ]; then check fingerprint-content-change changed changed
+else check fingerprint-content-change "$fp1==$fp2" changed; fi
 rm -f "$tmp"
-if [ -n "$m1" ] && [ "$m1" != "$m2" ]; then
-  check mtime-changes changed changed
-else
-  check mtime-changes "$m1->$m2" changed
-fi
+check fingerprint-missing "$(fingerprint /no/such/file/here)" missing
+
+# Path resolution: env override wins; otherwise state dir, then config dir.
+check resolve-env-override "$(HERDR_CHECKLIST_FILE=/x/y.md resolve_file)" /x/y.md
+check resolve-state-dir "$(unset HERDR_CHECKLIST_FILE; HERDR_PLUGIN_STATE_DIR=/s resolve_file)" /s/CHECKLIST.md
 
 # Starter carries the owner and all four sections.
 out=$(starter Cynthia)

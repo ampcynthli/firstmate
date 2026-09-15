@@ -6,7 +6,7 @@ Keeping the shape fixed is what lets it survive terminal restarts, and lets an A
 The checklist is a single markdown file (default `CHECKLIST.md`, configurable) rendered in a dedicated Herdr pane.
 It is meant to be your one at-a-glance reading surface for everything in flight: what only you can unblock, what is running, what is parked, and what just landed.
 
-`{{OWNER}}` below is you, the operator — `herdr-checklist.sh setup --owner "<name>"` substitutes your name when it creates the file.
+`{{OWNER}}` below is you, the operator — the plugin's `new` action substitutes `$HERDR_CHECKLIST_OWNER` (default `you`) when it creates the file.
 
 ## Sections, in this order, always all four
 
