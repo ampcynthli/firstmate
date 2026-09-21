@@ -48,13 +48,22 @@ done
 
 poll_tmp=$(mktemp -d)
 trap 'rm -rf "$poll_tmp"' EXIT
-for failure in fingerprint render disappear-before-render disappear-after-render; do
-  mkdir "$poll_tmp/$failure"
+for failure in copy fingerprint render disappear-before-render disappear-after-render truncate-before-render hangup interrupt terminate; do
+  mkdir -p "$poll_tmp/$failure/snapshots"
   printf 'initial\n' >"$poll_tmp/$failure/checklist.md"
   (
     export CHECKLIST_TEST_DIR="$poll_tmp/$failure" CHECKLIST_TEST_FAILURE="$failure"
     export HERDR_CHECKLIST_FILE="$poll_tmp/$failure/checklist.md"
     export HERDR_CHECKLIST_RENDERER=checklist_test_renderer
+    export TMPDIR="$CHECKLIST_TEST_DIR/snapshots"
+    cp() {
+      if [ "$CHECKLIST_TEST_FAILURE" = copy ] && [ ! -f "$CHECKLIST_TEST_DIR/failed" ]; then
+        touch "$CHECKLIST_TEST_DIR/failed"
+        printf 'partial\n' >"$2"
+        return 1
+      fi
+      command cp "$@"
+    }
     cksum() {
       if [ "$CHECKLIST_TEST_FAILURE" = fingerprint ] && [ ! -f "$CHECKLIST_TEST_DIR/failed" ]; then
         touch "$CHECKLIST_TEST_DIR/failed"
@@ -64,6 +73,11 @@ for failure in fingerprint render disappear-before-render disappear-after-render
       if [ "$CHECKLIST_TEST_FAILURE" = disappear-before-render ] && [ ! -f "$CHECKLIST_TEST_DIR/failed" ]; then
         touch "$CHECKLIST_TEST_DIR/failed"
         mv "$HERDR_CHECKLIST_FILE" "$CHECKLIST_TEST_DIR/moved"
+      fi
+      if [ "$CHECKLIST_TEST_FAILURE" = truncate-before-render ] && [ ! -f "$CHECKLIST_TEST_DIR/failed" ]; then
+        touch "$CHECKLIST_TEST_DIR/failed"
+        command cp "$HERDR_CHECKLIST_FILE" "$CHECKLIST_TEST_DIR/moved"
+        : >"$HERDR_CHECKLIST_FILE"
       fi
     }
     checklist_test_renderer() {
@@ -81,30 +95,39 @@ for failure in fingerprint render disappear-before-render disappear-after-render
       case $checklist_test_polls in
         1)
           if [ "$CHECKLIST_TEST_FAILURE" = disappear-after-render ]; then
+            command cp "$CHECKLIST_TEST_DIR/output" "$CHECKLIST_TEST_DIR/frame"
             mv "$HERDR_CHECKLIST_FILE" "$CHECKLIST_TEST_DIR/moved"
           fi
           ;;
+        2)
+          if [ "$CHECKLIST_TEST_FAILURE" = disappear-after-render ]; then
+            cmp -s "$CHECKLIST_TEST_DIR/frame" "$CHECKLIST_TEST_DIR/output" || return 78
+          fi
+          ;;
         3) printf 'updated\n' >"$HERDR_CHECKLIST_FILE" ;;
-        4) return 77 ;;
+        4)
+          case $CHECKLIST_TEST_FAILURE in
+            hangup) kill -HUP "$$" ;;
+            interrupt) kill -INT "$$" ;;
+            terminate) kill -TERM "$$" ;;
+            *) return 77 ;;
+          esac
+          ;;
       esac
     }
-    export -f cksum checklist_test_renderer sleep
+    export -f cp cksum checklist_test_renderer sleep
     bash "$DIR/herdr-checklist.sh" view
   ) >"$poll_tmp/$failure/output" 2>&1
-  check "view-$failure-keeps-polling" "$?" 77
-  expected=$'initial\nupdated'
-  if [ "$failure" = disappear-after-render ]; then
-    expected=$'initial\ninitial\nupdated'
-  fi
-  check "view-$failure-retries-and-refreshes" "$(cat "$poll_tmp/$failure/rendered" 2>/dev/null)" "$expected"
+  view_status=$?
+  expected_status=77
   case $failure in
-    disappear-*)
-      case $(cat "$poll_tmp/$failure/output") in
-        *"No checklist yet at $poll_tmp/$failure/checklist.md"*) check "view-$failure-placeholder-shown" yes yes ;;
-        *) check "view-$failure-placeholder-shown" no yes ;;
-      esac
-      ;;
+    hangup) expected_status=129 ;;
+    interrupt) expected_status=130 ;;
+    terminate) expected_status=143 ;;
   esac
+  check "view-$failure-keeps-polling" "$view_status" "$expected_status"
+  check "view-$failure-retries-and-refreshes" "$(cat "$poll_tmp/$failure/rendered" 2>/dev/null)" $'initial\nupdated'
+  check "view-$failure-snapshot-cleaned" "$(ls -A "$poll_tmp/$failure/snapshots")" ""
 done
 
 exit "$fail"

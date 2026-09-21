@@ -83,12 +83,17 @@ render() {
 # dependency. A checklist changes a few times an hour, so the poll is invisible;
 # swap in entr/fswatch only if you ever need sub-second latency.
 view() {
-  local file last="" now
+  local file last="" now snapshot
   file=$(resolve_file)
+  snapshot=$(mktemp)
+  trap 'rm -f "$snapshot"' EXIT
+  trap 'exit 129' HUP
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
   while :; do
-    if now=$(fingerprint "$file") && [ "$now" != "$last" ]; then
+    if cp "$file" "$snapshot" 2>/dev/null && now=$(fingerprint "$snapshot") && [ "$now" != "$last" ]; then
       last=""
-      if render "$file"; then
+      if render "$snapshot"; then
         last=$now
       fi
     fi
