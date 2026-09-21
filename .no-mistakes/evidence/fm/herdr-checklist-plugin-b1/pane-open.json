@@ -1,0 +1,24 @@
+{
+  "plugin_pane": {
+    "entrypoint": "checklist",
+    "pane": {
+      "agent_status": "unknown",
+      "cwd": "/Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z/herdr-checklist",
+      "focused": false,
+      "foreground_cwd": "/Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z/herdr-checklist",
+      "label": "Checklist",
+      "pane_id": "w1:p2",
+      "revision": 0,
+      "scroll": {
+        "max_offset_from_bottom": 0,
+        "offset_from_bottom": 0,
+        "viewport_rows": 41
+      },
+      "tab_id": "w1:t1",
+      "terminal_id": "term_65c046ab4683a2",
+      "workspace_id": "w1"
+    },
+    "plugin_id": "herdr-checklist"
+  },
+  "type": "plugin_pane_opened"
+}

@@ -1,0 +1,117 @@
+$ herdr plugin link /Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z/herdr-checklist
+{"id":"cli:plugin","result":{"plugin":{"actions":[{"command":["bash","herdr-checklist.sh","new"],"contexts":["workspace"],"id":"new","title":"New checklist"}],"description":"An at-a-glance checklist pane: act-now / in-flight / waiting / recently-done, kept in one markdown file.","enabled":true,"manifest_path":"/Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z/herdr-checklist/herdr-plugin.toml","min_herdr_version":"0.8.0","name":"Checklist","panes":[{"command":["bash","herdr-checklist.sh","view"],"id":"checklist","placement":"split","title":"Checklist"}],"platforms":["linux","macos"],"plugin_id":"herdr-checklist","plugin_root":"/Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z/herdr-checklist","source":{"kind":"local"},"version":"0.1.0"},"type":"plugin_linked"}}
+
+$ herdr workspace create --label Checklist-test --cwd /Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z --no-focus
+{"id":"cli:workspace:create","result":{"root_pane":{"agent_status":"unknown","cwd":"/Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z","focused":true,"foreground_cwd":"/Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z","pane_id":"w1:p1","revision":0,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":42},"tab_id":"w1:t1","terminal_id":"term_65c046d38c0d31","workspace_id":"w1"},"tab":{"agent_status":"unknown","focused":true,"label":"1","number":1,"pane_count":1,"tab_id":"w1:t1","workspace_id":"w1"},"type":"workspace_created","workspace":{"active_tab_id":"w1:t1","agent_status":"unknown","focused":true,"label":"Checklist-test","number":1,"pane_count":1,"tab_count":1,"workspace_id":"w1"}}}
+
+$ herdr plugin action invoke herdr-checklist.new
+{"id":"cli:plugin","result":{"action":{"action_id":"new","command":["bash","herdr-checklist.sh","new"],"contexts":["workspace"],"platforms":["linux","macos"],"plugin_id":"herdr-checklist","title":"New checklist"},"context":{"correlation_id":"cli:plugin","focused_pane_cwd":"/Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z","focused_pane_id":"w1:p1","focused_pane_status":"unknown","invocation_source":"cli","tab_id":"w1:t1","tab_label":"1","workspace_cwd":"/Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z","workspace_id":"w1","workspace_label":"Checklist-test"},"log":{"action_id":"new","command":["bash","herdr-checklist.sh","new"],"log_id":"plugin-log-1","plugin_id":"herdr-checklist","started_unix_ms":1790023942361,"status":"running"},"type":"plugin_action_invoked"}}
+
+$ herdr plugin log list --plugin herdr-checklist
+{"id":"cli:plugin","result":{"logs":[{"action_id":"new","command":["bash","herdr-checklist.sh","new"],"log_id":"plugin-log-1","plugin_id":"herdr-checklist","started_unix_ms":1790023942361,"status":"running"}],"type":"plugin_log_list"}}
+
+$ herdr plugin log list --plugin herdr-checklist
+{"id":"cli:plugin","result":{"logs":[{"action_id":"new","command":["bash","herdr-checklist.sh","new"],"exit_code":0,"finished_unix_ms":1790023942480,"log_id":"plugin-log-1","plugin_id":"herdr-checklist","started_unix_ms":1790023942361,"status":"succeeded","stderr":"","stdout":"Created checklist: /Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z/.hc/custom folder/CHECKLIST.md\nOpen its pane with:\n  /Users/cynthiali/.local/bin/herdr plugin pane open --plugin herdr-checklist --entrypoint checklist\n"}],"type":"plugin_log_list"}}
+
+$ herdr plugin pane open --plugin herdr-checklist --entrypoint checklist --target-pane w1:p1 --direction right --no-focus
+{"id":"cli:plugin","result":{"plugin_pane":{"entrypoint":"checklist","pane":{"agent_status":"unknown","cwd":"/Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z/herdr-checklist","focused":false,"foreground_cwd":"/Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z/herdr-checklist","label":"Checklist","pane_id":"w1:p2","revision":0,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":41},"tab_id":"w1:t1","terminal_id":"term_65c046d3dd2322","workspace_id":"w1"},"plugin_id":"herdr-checklist"},"type":"plugin_pane_opened"}}
+
+$ herdr pane read w1:p2 --source visible --raw
+# CHECKLIST — Test Operator    2026-09-21 13:52 local
+# ════════════════════════════════════════════════════════════
+
+## 🔴 ACT NOW — only you can do these
+
+## 🔵 IN FLIGHT — agents working right now
+
+## 🟡 WAITING — parked on a word or an external event
+
+## 🟢 RECENTLY DONE
+$ herdr pane read w1:p2 --source visible --raw
+# CHECKLIST — Test Operator    2026-09-21 13:52 local
+# ════════════════════════════════════════════════════════════
+
+## 🔴 ACT NOW — only you can do these
+1. Approve the release plan; unblocks staging.
+   reply-word: "ship"
+
+## 🔵 IN FLIGHT — agents working right now
+- Update login flow (pane w1:p1). Done = passing checks.
+
+## 🟡 WAITING — parked on a word or an external event
+- Design review: waiting on Morgan.
+
+## 🟢 RECENTLY DONE
+- Published the setup guide.
+$ herdr plugin action invoke herdr-checklist.new
+{"id":"cli:plugin","result":{"action":{"action_id":"new","command":["bash","herdr-checklist.sh","new"],"contexts":["workspace"],"platforms":["linux","macos"],"plugin_id":"herdr-checklist","title":"New checklist"},"context":{"correlation_id":"cli:plugin","focused_pane_cwd":"/Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z","focused_pane_id":"w1:p1","focused_pane_status":"unknown","invocation_source":"cli","tab_id":"w1:t1","tab_label":"1","workspace_cwd":"/Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z","workspace_id":"w1","workspace_label":"Checklist-test"},"log":{"action_id":"new","command":["bash","herdr-checklist.sh","new"],"log_id":"plugin-log-2","plugin_id":"herdr-checklist","started_unix_ms":1790023945484,"status":"running"},"type":"plugin_action_invoked"}}
+
+$ herdr plugin log list --plugin herdr-checklist
+{"id":"cli:plugin","result":{"logs":[{"action_id":"new","command":["bash","herdr-checklist.sh","new"],"exit_code":0,"finished_unix_ms":1790023942480,"log_id":"plugin-log-1","plugin_id":"herdr-checklist","started_unix_ms":1790023942361,"status":"succeeded","stderr":"","stdout":"Created checklist: /Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z/.hc/custom folder/CHECKLIST.md\nOpen its pane with:\n  /Users/cynthiali/.local/bin/herdr plugin pane open --plugin herdr-checklist --entrypoint checklist\n"},{"action_id":"new","command":["bash","herdr-checklist.sh","new"],"exit_code":0,"finished_unix_ms":1790023945493,"log_id":"plugin-log-2","plugin_id":"herdr-checklist","started_unix_ms":1790023945484,"status":"succeeded","stderr":"","stdout":"Checklist already exists: /Users/cynthiali/.no-mistakes/worktrees/8af22f4e204d/01M32TN988N8735K6J2VW5CS7Z/.hc/custom folder/CHECKLIST.md\nOpen its pane with:\n  /Users/cynthiali/.local/bin/herdr plugin pane open --plugin herdr-checklist --entrypoint checklist\n"}],"type":"plugin_log_list"}}
+
+$ herdr pane read w1:p2 --source visible --raw
+# CHECKLIST — Test Operator    2026-09-21 13:52 local
+# ════════════════════════════════════════════════════════════
+
+## 🔴 ACT NOW — only you can do these
+1. Approve the release plan; unblocks staging.
+   reply-word: "ship"
+
+## 🔵 IN FLIGHT — agents working right now
+- Update login flow (pane w1:p1). Done = passing checks.
+
+## 🟡 WAITING — parked on a word or an external event
+- Design review: waiting on Jordan.
+
+## 🟢 RECENTLY DONE
+- Published the setup guide.
+$ herdr pane read w1:p2 --source visible --raw
+# CHECKLIST — Test Operator    2026-09-21 13:52 local
+# ════════════════════════════════════════════════════════════
+
+## 🔴 ACT NOW — only you can do these
+1. Approve the release plan; unblocks staging.
+   reply-word: "ship"
+
+## 🔵 IN FLIGHT — agents working right now
+- Update login flow (pane w1:p1). Done = passing checks.
+
+## 🟡 WAITING — parked on a word or an external event
+- Design review: waiting on Jordan.
+
+## 🟢 RECENTLY DONE
+- Published the setup guide.
+$ herdr pane read w1:p2 --source visible --raw
+# CHECKLIST — Test Operator    2026-09-21 13:52 local
+# ════════════════════════════════════════════════════════════
+
+## 🔴 ACT NOW — only you can do these
+1. Approve the release plan; unblocks staging.
+   reply-word: "ship"
+
+## 🔵 IN FLIGHT — agents working right now
+- Update login flow (pane w1:p1). Done = passing checks.
+
+## 🟡 WAITING — parked on a word or an external event
+- Design review: waiting on Jordan.
+
+## 🟢 RECENTLY DONE
+- Published the setup guide.
+$ herdr pane read w1:p2 --source visible --raw
+# CHECKLIST — Test Operator    2026-09-21 13:52 local
+# ════════════════════════════════════════════════════════════
+
+## 🔴 ACT NOW — only you can do these
+1. Approve the release plan; unblocks staging.
+   reply-word: "ship"
+
+## 🔵 IN FLIGHT — agents working right now
+- Update login flow (pane w1:p1). Done = passing checks.
+
+## 🟡 WAITING — parked on a word or an external event
+- Design review: waiting on Taylor.
+
+## 🟢 RECENTLY DONE
+- Published the setup guide.
+Observed: local plugin linked; asynchronous action log reports its path; all four sections render in a split pane; new preserves edits; same-length/same-mtime edit refreshes; missing source preserves the current frame; restoration and subsequent edits refresh.
+$ guarded lab teardown

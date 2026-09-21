@@ -1,0 +1,15 @@
+# CHECKLIST — Test Operator    2026-09-21 13:52 local
+# ════════════════════════════════════════════════════════════
+
+## 🔴 ACT NOW — only you can do these
+1. Approve the release plan; unblocks staging.
+   reply-word: "ship"
+
+## 🔵 IN FLIGHT — agents working right now
+- Update login flow (pane w1:p1). Done = passing checks.
+
+## 🟡 WAITING — parked on a word or an external event
+- Design review: waiting on Taylor.
+
+## 🟢 RECENTLY DONE
+- Published the setup guide.
