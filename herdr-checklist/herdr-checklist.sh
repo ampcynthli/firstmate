@@ -86,10 +86,10 @@ view() {
   local file last="" now
   file=$(resolve_file)
   while :; do
-    now=$(fingerprint "$file")
-    if [ "$now" != "$last" ]; then
-      last=$now
-      render "$file"
+    if now=$(fingerprint "$file") && [ "$now" != "$last" ]; then
+      if render "$file"; then
+        last=$now
+      fi
     fi
     sleep "${HERDR_CHECKLIST_INTERVAL:-1}"
   done

@@ -48,6 +48,7 @@ herdr plugin action invoke herdr-checklist.new     # scaffolds the checklist fil
 herdr plugin pane open --plugin herdr-checklist --entrypoint checklist
 ```
 
+Find the created file's path in the [plugin log](#where-the-file-lives), then edit it to fill in your checklist.
 The pane re-renders whenever the file changes — no restart needed.
 To keep it one keystroke away, bind the pane or the action in `config.toml`:
 
@@ -61,18 +62,28 @@ description = "new checklist"
 
 ## Where the file lives
 
-By default the checklist is `CHECKLIST.md` under the plugin's Herdr-managed state directory; `new` prints the exact path it created.
-To keep it somewhere you choose (for example a project's own `CHECKLIST.md`), set an absolute path before opening the pane and running the action:
+By default the checklist is `CHECKLIST.md` under the plugin's Herdr-managed state directory.
+Actions run asynchronously, and Herdr captures `new`'s output in its plugin log:
+
+```sh
+herdr plugin log list --plugin herdr-checklist
+```
+
+Find the completed `new` action and read its `stdout` for the exact checklist path; if it is still running, run the log command again after it finishes.
+To keep it somewhere you choose (for example a project's own `CHECKLIST.md`), set these variables in the environment that starts Herdr's server so both the action and pane inherit them:
 
 ```sh
 export HERDR_CHECKLIST_FILE=/abs/path/to/CHECKLIST.md
 export HERDR_CHECKLIST_OWNER="Your Name"    # written into the starter header
 ```
 
+If the server is already running, exporting these in another shell will not update it: restart the server with this environment before invoking `new` and reopening the pane.
+Passing `--env HERDR_CHECKLIST_FILE=/abs/path/to/CHECKLIST.md` to `herdr plugin pane open` overrides only the viewer's path; it does not change where the `new` action creates the file.
+
 ## Rendering
 
 The pane uses [`glow`](https://github.com/charmbracelet/glow), `mdcat`, or `bat` if any is installed, and falls back to plain `cat` otherwise — nothing extra is required.
-Force a choice with `HERDR_CHECKLIST_RENDERER=glow`.
+Force a choice by adding `--env HERDR_CHECKLIST_RENDERER=glow` to `herdr plugin pane open`.
 
 ## Keeping it useful
 
@@ -86,4 +97,4 @@ If an AI agent maintains the file for you, point it at [checklist-template.md](c
 ./herdr-checklist.test.sh
 ```
 
-Covers change detection, file-path resolution, renderer selection, and the starter skeleton.
+Covers change detection, recovery from transient read and render failures, file-path resolution, renderer selection, and the starter skeleton.

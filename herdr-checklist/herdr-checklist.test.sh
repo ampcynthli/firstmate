@@ -46,4 +46,41 @@ for marker in "CHECKLIST — Cynthia" "🔴 ACT NOW" "🔵 IN FLIGHT" "🟡 WAIT
   esac
 done
 
+poll_tmp=$(mktemp -d)
+trap 'rm -rf "$poll_tmp"' EXIT
+for failure in fingerprint render; do
+  mkdir "$poll_tmp/$failure"
+  printf 'initial\n' >"$poll_tmp/$failure/checklist.md"
+  (
+    export CHECKLIST_TEST_DIR="$poll_tmp/$failure" CHECKLIST_TEST_FAILURE="$failure"
+    export HERDR_CHECKLIST_FILE="$poll_tmp/$failure/checklist.md"
+    export HERDR_CHECKLIST_RENDERER=checklist_test_renderer
+    cksum() {
+      if [ "$CHECKLIST_TEST_FAILURE" = fingerprint ] && [ ! -f "$CHECKLIST_TEST_DIR/failed" ]; then
+        touch "$CHECKLIST_TEST_DIR/failed"
+        return 1
+      fi
+      command cksum "$@"
+    }
+    checklist_test_renderer() {
+      if [ "$CHECKLIST_TEST_FAILURE" = render ] && [ ! -f "$CHECKLIST_TEST_DIR/failed" ]; then
+        touch "$CHECKLIST_TEST_DIR/failed"
+        return 1
+      fi
+      command cat "$@" >>"$CHECKLIST_TEST_DIR/rendered"
+    }
+    sleep() {
+      checklist_test_polls=$((${checklist_test_polls:-0} + 1))
+      case $checklist_test_polls in
+        3) printf 'updated\n' >"$HERDR_CHECKLIST_FILE" ;;
+        4) return 77 ;;
+      esac
+    }
+    export -f cksum checklist_test_renderer sleep
+    bash "$DIR/herdr-checklist.sh" view
+  ) >"$poll_tmp/$failure/output" 2>&1
+  check "view-$failure-keeps-polling" "$?" 77
+  check "view-$failure-retries-and-refreshes" "$(cat "$poll_tmp/$failure/rendered" 2>/dev/null)" $'initial\nupdated'
+done
+
 exit "$fail"
