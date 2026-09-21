@@ -22,10 +22,10 @@ The convention it packages — the four sections and the invariants that keep th
 - Design review: waiting on Sam's reply in the thread.
 
 ## 🟢 RECENTLY DONE
-- Merged the logging fix: https://github.com/acme/app/pull/812
+- Shipped the logging fix.
 ```
 
-The four sections, the placement rules, and the invariants (every thread appears exactly once, nothing is dropped silently, reply-words are load-bearing) are defined in [checklist-template.md](checklist-template.md) — read that; it is the contract you (and any agent maintaining the file for you) follow on every edit.
+Follow [checklist-template.md](checklist-template.md) for the section, placement, and formatting contract on every edit.
 
 ## Install (under 5 minutes)
 
@@ -49,8 +49,8 @@ herdr plugin pane open --plugin herdr-checklist --entrypoint checklist
 ```
 
 Find the created file's path in the [plugin log](#where-the-file-lives), then edit it to fill in your checklist.
-The pane re-renders whenever the file changes — no restart needed.
-To keep it one keystroke away, bind the pane or the action in `config.toml`:
+The pane refreshes automatically as you edit; see [Rendering](#rendering) for how it handles unavailable files.
+To bind checklist creation to a key, add the action to Herdr's `config.toml`:
 
 ```toml
 [[keys.command]]
@@ -85,11 +85,14 @@ Passing `--env HERDR_CHECKLIST_FILE=/abs/path/to/CHECKLIST.md` to `herdr plugin 
 The pane uses [`glow`](https://github.com/charmbracelet/glow), `mdcat`, or `bat` if any is installed, and falls back to plain `cat` otherwise — nothing extra is required.
 Force a choice by adding `--env HERDR_CHECKLIST_RENDERER=glow` to `herdr plugin pane open`.
 
+The viewer checks for edits once per second by default.
+If the checklist is missing or unreadable, it keeps the current frame and retries; a pane opened before the file exists stays blank until it can read it.
+A failed render is retried on the next poll.
+
 ## Keeping it useful
 
-The point is that the file always reflects reality.
-Edit it surgically as state changes; do a full rewrite only when the structure drifts, and when you do, diff against the previous version so nothing live disappears without a reason.
-If an AI agent maintains the file for you, point it at [checklist-template.md](checklist-template.md) and have it re-read that contract after any context reset.
+You or your agent maintain the checklist's content; the plugin creates and displays the file.
+Follow the format contract's [update discipline](checklist-template.md#update-discipline), including its guidance for agents after a context reset.
 
 ## Tests
 

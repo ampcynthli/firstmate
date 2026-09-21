@@ -21,8 +21,8 @@ RENDERERS=(glow mdcat bat)
 warn() { printf '%s\n' "$*" >&2; }
 die() { warn "$*"; exit 1; }
 
-# The one place the checklist file path is decided, so the pane and the action
-# always agree on it.
+# Shared path resolution: the pane and action agree when they receive the same
+# environment. See README.md for server setup and pane-only overrides.
 resolve_file() {
   if [ -n "${HERDR_CHECKLIST_FILE:-}" ]; then
     printf '%s\n' "$HERDR_CHECKLIST_FILE"
@@ -82,6 +82,8 @@ render() {
 # ponytail: 1s content-fingerprint poll instead of an inotify/fswatch
 # dependency. A checklist changes a few times an hour, so the poll is invisible;
 # swap in entr/fswatch only if you ever need sub-second latency.
+# Fingerprint and render the same snapshot so concurrent saves cannot cache
+# unseen content; only a successful render commits its fingerprint.
 view() {
   local file last="" now snapshot
   file=$(resolve_file)
