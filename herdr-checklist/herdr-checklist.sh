@@ -69,7 +69,7 @@ render() {
   if [ ! -f "$file" ]; then
     printf 'No checklist yet at %s\n\nCreate one with:\n  %s plugin action invoke %s.new\n' \
       "$file" "${HERDR_BIN_PATH:-herdr}" "${HERDR_PLUGIN_ID:-herdr-checklist}"
-    return
+    return 1
   fi
   case $renderer in
     glow) glow -w "${COLUMNS:-100}" "$file" ;;
@@ -87,6 +87,7 @@ view() {
   file=$(resolve_file)
   while :; do
     if now=$(fingerprint "$file") && [ "$now" != "$last" ]; then
+      last=""
       if render "$file"; then
         last=$now
       fi

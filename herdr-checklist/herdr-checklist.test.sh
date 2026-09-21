@@ -48,7 +48,7 @@ done
 
 poll_tmp=$(mktemp -d)
 trap 'rm -rf "$poll_tmp"' EXIT
-for failure in fingerprint render; do
+for failure in fingerprint render disappear-before-render disappear-after-render; do
   mkdir "$poll_tmp/$failure"
   printf 'initial\n' >"$poll_tmp/$failure/checklist.md"
   (
@@ -60,7 +60,11 @@ for failure in fingerprint render; do
         touch "$CHECKLIST_TEST_DIR/failed"
         return 1
       fi
-      command cksum "$@"
+      command cksum "$@" || return
+      if [ "$CHECKLIST_TEST_FAILURE" = disappear-before-render ] && [ ! -f "$CHECKLIST_TEST_DIR/failed" ]; then
+        touch "$CHECKLIST_TEST_DIR/failed"
+        mv "$HERDR_CHECKLIST_FILE" "$CHECKLIST_TEST_DIR/moved"
+      fi
     }
     checklist_test_renderer() {
       if [ "$CHECKLIST_TEST_FAILURE" = render ] && [ ! -f "$CHECKLIST_TEST_DIR/failed" ]; then
@@ -71,7 +75,15 @@ for failure in fingerprint render; do
     }
     sleep() {
       checklist_test_polls=$((${checklist_test_polls:-0} + 1))
+      if [ -f "$CHECKLIST_TEST_DIR/moved" ]; then
+        mv "$CHECKLIST_TEST_DIR/moved" "$HERDR_CHECKLIST_FILE"
+      fi
       case $checklist_test_polls in
+        1)
+          if [ "$CHECKLIST_TEST_FAILURE" = disappear-after-render ]; then
+            mv "$HERDR_CHECKLIST_FILE" "$CHECKLIST_TEST_DIR/moved"
+          fi
+          ;;
         3) printf 'updated\n' >"$HERDR_CHECKLIST_FILE" ;;
         4) return 77 ;;
       esac
@@ -80,7 +92,19 @@ for failure in fingerprint render; do
     bash "$DIR/herdr-checklist.sh" view
   ) >"$poll_tmp/$failure/output" 2>&1
   check "view-$failure-keeps-polling" "$?" 77
-  check "view-$failure-retries-and-refreshes" "$(cat "$poll_tmp/$failure/rendered" 2>/dev/null)" $'initial\nupdated'
+  expected=$'initial\nupdated'
+  if [ "$failure" = disappear-after-render ]; then
+    expected=$'initial\ninitial\nupdated'
+  fi
+  check "view-$failure-retries-and-refreshes" "$(cat "$poll_tmp/$failure/rendered" 2>/dev/null)" "$expected"
+  case $failure in
+    disappear-*)
+      case $(cat "$poll_tmp/$failure/output") in
+        *"No checklist yet at $poll_tmp/$failure/checklist.md"*) check "view-$failure-placeholder-shown" yes yes ;;
+        *) check "view-$failure-placeholder-shown" no yes ;;
+      esac
+      ;;
+  esac
 done
 
 exit "$fail"
